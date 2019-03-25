@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import { handleResponse } from './../../helpers';
-import './Table.css'
 import Loading from './../common/Loading';
+import Table from './Table';
+import Pagination from './Pagination';
 
 
 class List extends Component {
@@ -12,18 +13,29 @@ class List extends Component {
 			loading: false,
 			currencies: [],
 			error: null,
+			totalPages: 0,
+			page: 1
 		}
 	}
 
 	componentDidMount() {
+		this.fetchCurrencies()
+	}
+
+
+
+	fetchCurrencies() {
 		this.setState({ loading: true })
 
-		fetch('https://api.udilia.com/coins/v1/cryptocurrencies?page=1&perPage=20')
+		const { page } = this.state;
+
+		fetch(`https://api.udilia.com/coins/v1/cryptocurrencies?page=${page}&perPage=20`)
 		.then(handleResponse)
 		.then((data) => {
 		  console.log('Success', data);
+		  const { currencies, totalPages } = data;
 
-		  this.setState({ currencies: data.currencies, loading: false })
+		  this.setState({ currencies: currencies, totalPages: totalPages, loading: false })
 		})
 		.catch((error) => {
 			this.setState({ error: error.message, loading: false })
@@ -31,19 +43,23 @@ class List extends Component {
 		});
 	}
 
-	renderChangePercent(percent) {
-		if(percent > 0) {
-			return <span className="percent-raised">{percent}% &uarr;</span>
-		} else if(percent < 0) {
-			return <span className="percent-fallen">{percent}% &darr</span>
+	handlePaginationClick = (direction) => {
+		let nextPage = this.state.page
+
+		if(direction === 'next') {
+			nextPage++;
 		} else {
-			return <span>{percent}</span>
+			nextPage--;
 		}
+
+		this.setState({ page: nextPage}, () => {
+			this.fetchCurrencies()
+		})
 	}
 
 
 	render() {
-		const { loading, error, currencies } = this.state;
+		const { loading, error, currencies, page, totalPages } = this.state;
 
 		if(loading) {
 			return <div className="loading-container"><Loading /></div>
@@ -53,36 +69,16 @@ class List extends Component {
 			return <div className="error">{error}</div>
 		}
 		return (
-			<div className="Table-container">
-				<table className="Table">
-					<thead className="Table-head">
-						<tr>
-							<th>Cryptocurrency</th>
-							<th>Price</th>
-							<th>Market Cap</th>
-							<th>24H Change</th>
-						</tr>
-					</thead>
-					<tbody className="Table-body">
-						{currencies.map((currency) => (
-						<tr key={currency.id}>
-							<td>
-								<span className="Table-rank">{currency.rank}</span>
-								{currency.name}
-							</td>
-							<td>
-								<span className="Table-dollar">$ {currency.price}</span>
-							</td>
-							<td>
-								<span className="Table-dollar">$ {currency.marketCap}</span>
-							</td>
-							<td>
-								{this.renderChangePercent(currency.percentChange24h)}
-							</td>
-						</tr>
-					))}
-					</tbody>
-				</table>
+			<div>
+				<Table 
+				currencies={currencies}
+				/>
+
+				<Pagination 
+					page={page}
+					totalPages={totalPages}
+					handlePaginationClick={this.handlePaginationClick}
+				/>
 			</div>
 		)
 	}
