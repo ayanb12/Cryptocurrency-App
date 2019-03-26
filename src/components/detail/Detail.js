@@ -16,8 +16,23 @@ class Detail extends Component {
 
 
 	componentDidMount() {
+		console.log('Component has been mounted', this.props)
+
 		const currencyId = this.props.match.params.id;
 
+		this.fetchCurrency(currencyId)
+	}
+
+	componentWillReceiveProps(nextProps) {
+		if(this.props.location.pathname !== nextProps.location.pathname) {
+			//Get new id from url
+			const newCurrencyId = nextProps.match.params.id
+
+			this.fetchCurrency(newCurrencyId)
+		}
+	}
+
+	fetchCurrency(currencyId) {
 		this.setState({ loading: true })
 
 		fetch(`https://api.udilia.com/coins/v1/cryptocurrencies/${currencyId}`)
@@ -37,6 +52,7 @@ class Detail extends Component {
 			})
 		})
 	}
+
 	render() {
 		const { loading, error, currency } = this.state;
 

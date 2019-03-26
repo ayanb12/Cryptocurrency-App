@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { withRouter } from 'react-router-dom'
 import './Search.css';
 import { handleResponse } from './../../helpers';
 import Loading from './Loading';
@@ -8,6 +9,7 @@ class Search extends Component {
 		super();
 
 		this.state = {
+			searchResults: [],
 			searchQuery: '',
 			loading: false
 		}
@@ -30,13 +32,56 @@ class Search extends Component {
 		.then(handleResponse)
 		.then((result) => {
 			console.log(result)
-			this.setState({ loading: false })
+			this.setState({ 
+				loading: false,
+				searchResults: result
+			 })
 		})
+	}
+
+	renderSearchResults = () => {
+		const { searchResults, searchQuery, loading } = this.state;
+
+		if(!searchQuery) {
+			return '';
+		}
+
+		if(searchResults.length > 0) {
+			return (
+				<div className="Search-result-container">
+					{searchResults.map(result => (
+						<div key={result.id} className="Search-result"
+						onClick={() => this.handleRedirect(result.id)}  >
+							{result.name} ({result.symbol})
+						</div>
+					))}
+				</div> 
+			)
+		}
+
+		if(!loading) {
+			return (
+				<div className="Search-result-container">
+					<div className="Search-no-result">
+						No results found.
+					</div>
+				</div>
+			)
+		}
+	}
+
+	handleRedirect = (currencyId) => {
+		this.setState({ 
+			searchQuery: '',
+			searchResults: []
+		 })
+
+		 this.props.history.push(`/currency/${currencyId}`)
 	}
 
 
 	render() {
-		const { loading } = this.state;
+		const { loading, searchQuery } = this.state;
 		return (
 			<div className="Search">
 			<span className="Search-icon"/>
@@ -44,7 +89,9 @@ class Search extends Component {
 				className="Search-input" 
 				type="text"
 				placeholder="Currency name"
-				onChange={this.handleChange}/>
+				onChange={this.handleChange}
+					value={searchQuery}
+				/>
 
 				{loading &&
 				<div className="Search-loading">
@@ -53,9 +100,11 @@ class Search extends Component {
 						height="12px"
 					/>
 				</div>}
+
+				{this.renderSearchResults()}
 			</div>
 		)
 	}
 }
 
-export default Search;
+export default withRouter(Search);
